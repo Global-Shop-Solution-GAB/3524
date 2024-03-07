@@ -1,0 +1,472 @@
+Program.Sub.ScreenSU.Start
+gui.FrmTerms..create
+gui.FrmTerms..caption("Setup AP Terms")
+gui.FrmTerms..size(4200,5490)
+gui.FrmTerms..minx(0)
+gui.FrmTerms..miny(0)
+gui.FrmTerms..position(0,0)
+gui.FrmTerms..event(unload,subUnload)
+gui.FrmTerms..alwaysontop(False)
+gui.FrmTerms..fontname("Arial")
+gui.FrmTerms..fontsize(7)
+gui.FrmTerms..forecolor(0)
+gui.FrmTerms..fontstyle(,,,,)
+gui.FrmTerms..BackColor(-2147483633)
+gui.FrmTerms..controlbox(True)
+gui.FrmTerms..maxbutton(True)
+gui.FrmTerms..minbutton(True)
+gui.FrmTerms..mousepointer(1)
+gui.FrmTerms..moveable(True)
+gui.FrmTerms..sizeable(False)
+gui.FrmTerms..ShowInTaskBar(True)
+gui.FrmTerms..titlebar(True)
+gui.FrmTerms.gsfgTerms.create(gsflexgrid)
+gui.FrmTerms.gsfgTerms.FixedRows(0)
+gui.FrmTerms.gsfgTerms.FixedCols(0)
+gui.FrmTerms.gsfgTerms.visible(True)
+gui.FrmTerms.gsfgTerms.size(3700,3565)
+gui.FrmTerms.gsfgTerms.zorder(0)
+gui.FrmTerms.gsfgTerms.position(100,860)
+gui.FrmTerms.gsfgTerms.enabled(True)
+gui.FrmTerms.gsfgTerms.event(mouseup,gsfgTerms_mouseup)
+gui.FrmTerms.cmdSave.create(button)
+gui.FrmTerms.cmdSave.caption("Save")
+gui.FrmTerms.cmdSave.visible(True)
+gui.FrmTerms.cmdSave.size(800,355)
+gui.FrmTerms.cmdSave.zorder(0)
+gui.FrmTerms.cmdSave.position(185,4500)
+gui.FrmTerms.cmdSave.enabled(True)
+gui.FrmTerms.cmdSave.fontname("Arial")
+gui.FrmTerms.cmdSave.fontsize(7)
+gui.FrmTerms.cmdSave.event(click,cmdSave_Click)
+gui.FrmTerms.cmdSave.defaultvalue("")
+gui.FrmTerms.cmdSave.controlgroup(0)
+gui.FrmTerms.lblDesc.create(label,"***Enter Text***",True,3500,720,1,200,95,True,0,Arial,7,-2147483633,0)
+gui.FrmTerms.lblDesc.defaultvalue("")
+gui.FrmTerms.lblDesc.controlgroup(0)
+gui.FrmTerms.progress1.create(progressbar)
+gui.FrmTerms.progress1.visible(False)
+gui.FrmTerms.progress1.size(2925,255)
+gui.FrmTerms.progress1.zorder(0)
+gui.FrmTerms.progress1.position(500,2300)
+gui.FrmTerms.progress1.enabled(True)
+gui.FrmTerms.cmdSave.tabstop(True)
+gui.FrmTerms.cmdSave.tabindex(23)
+
+
+Program.Sub.ScreenSU.End
+
+Program.Sub.Preflight.Start
+
+Variable.UDT.GAB_3524_AP_TERMS.Define("TERMS",String,TERMS)
+Variable.UDT.GAB_3524_AP_TERMS.Define("DAYS",Long,DAYS)
+
+Variable.uGlobal.uTerms.Declare("GAB_3524_AP_TERMS")
+Program.Sub.Preflight.End
+
+Program.Sub.Main.Start
+'This is going to be used to link Global Shop terms to Days for a second due date
+
+F.Intrinsic.Control.SetErrorHandler("Main_Err")
+F.Intrinsic.Control.ClearErrors
+
+V.Local.sError.Declare(String)
+'============================================================================================================================================================================================================================
+
+V.Local.sIcon.Declare(String)
+
+'F.Intrinsic.String.Build("{0}\gss.ico",V.Caller.InstallDir,V.Local.sIcon)
+'Gui.FrmTerms..Icon(V.Local.sIcon)
+
+F.ODBC.Connection!con.OpenConnection(V.Ambient.PDSN,V.Ambient.PUser,V.Ambient.PPass)
+
+F.Intrinsic.Control.CallSub(Subcreatetable)
+F.Intrinsic.Control.CallSub(Subbuildstyles)
+F.Intrinsic.Control.CallSub(Subpopulateudt)
+
+Gui.FrmTerms.lblDesc.Caption("Please reference Terms Codes under System Support > Administration > Company Options (Standard) > Accounts Payable Table Maintenance > Terms for Term Code IDs.")
+Gui.FrmTerms..Show
+
+'============================================================================================================================================================================================================================
+F.Intrinsic.Control.Label("Main_Err")
+F.Intrinsic.Control.If(V.Ambient.ErrorNumber,<>,0)
+	Function.Intrinsic.String.Concat("Project: GAB_3524_AP_Terms_Disc_Setup.gas",V.Ambient.Newline,V.Ambient.Newline,"Subroutine: ",V.Ambient.CurrentSubroutine,V.Ambient.NewLine,"Error Occurred ",V.Ambient.ErrorNumber," with description ",V.Ambient.ErrorDescription,V.Local.sError)
+	F.Intrinsic.UI.Msgbox(V.Local.sError)
+Function.Intrinsic.Control.EndIf
+
+Program.Sub.Main.End
+
+Program.Sub.subBuildStyles.Start
+'Define Build Styles for Flex Grid
+F.Intrinsic.Control.SetErrorHandler("subBuildStyles_Err")
+F.Intrinsic.Control.ClearErrors
+
+V.Local.sError.Declare(String)
+'============================================================================================================================================================================================================================
+
+'Define Number of Columns and Fixed Columns in Flex Grid
+'Fixed Column for Row Number
+Gui.FrmTerms.gsfgTerms.Cols(4)
+
+'Temp Set Row Count to 2 (So that Column Header can be Defined)
+'If No Data is Found Later... Rows will Remain at 1 for the Fixed Header
+Gui.FrmTerms.gsfgTerms.Rows(2)
+Gui.FrmTerms.gsfgTerms.FixedRows(1)
+
+'Term Codes
+Gui.FrmTerms.gsfgTerms.TextMatrix(0,0,"Term Code IDs")
+Gui.FrmTerms.gsfgTerms.ColWidth(0,1200)
+Gui.FrmTerms.gsfgTerms.BuildStyle(0,0,"Format","Alignment",4)
+Gui.FrmTerms.gsfgTerms.BuildStyle(1,0,"Format","Alignment",4)
+
+'Days
+Gui.FrmTerms.gsfgTerms.TextMatrix(1,0,"Days")
+Gui.FrmTerms.gsfgTerms.ColWidth(1,1200)
+Gui.FrmTerms.gsfgTerms.BuildStyle(0,1,"Format","Alignment",4)
+Gui.FrmTerms.gsfgTerms.BuildStyle(1,1,"Format","Alignment",4)
+
+'Add
+Gui.FrmTerms.gsfgTerms.TextMatrix(2,0,"")
+Gui.FrmTerms.gsfgTerms.ColWidth(2,600)
+Gui.FrmTerms.gsfgTerms.BuildStyle(1,2,"Format","Alignment",4)
+Gui.FrmTerms.gsfgTerms.BuildStyle(1,2,"Type","Command","Add")
+
+'Delete
+Gui.FrmTerms.gsfgTerms.TextMatrix(3,0,"")
+Gui.FrmTerms.gsfgTerms.ColWidth(3,600)
+Gui.FrmTerms.gsfgTerms.BuildStyle(1,3,"Format","Alignment",4)
+Gui.FrmTerms.gsfgTerms.BuildStyle(1,3,"Type","Command","Delete")
+
+'ApplyStyles to row 0
+Gui.FrmTerms.gsfgTerms.ApplyStyle(0,0)
+Gui.FrmTerms.gsfgTerms.ApplyStyle(1,1)
+
+F.Intrinsic.Control.ExitSub
+
+'============================================================================================================================================================================================================================
+F.Intrinsic.Control.Label("subBuildStyles_Err")
+F.Intrinsic.Control.If(V.Ambient.ErrorNumber,<>,0)
+	Function.Intrinsic.String.Concat("Project: GAB_3524_AP_Terms_Disc_Setup.gas",V.Ambient.Newline,V.Ambient.Newline,"Subroutine: ",V.Ambient.CurrentSubroutine,V.Ambient.NewLine,"Error Occurred ",V.Ambient.ErrorNumber," with description ",V.Ambient.ErrorDescription,V.Local.sError)
+	F.Intrinsic.UI.Msgbox(V.Local.sError)
+Function.Intrinsic.Control.EndIf
+
+Program.Sub.subBuildStyles.End
+
+Program.Sub.subUnload.Start
+F.Intrinsic.Control.SetErrorHandler("Unload_Err")
+F.Intrinsic.Control.ClearErrors
+
+V.Local.sError.Declare(String)
+'============================================================================================================================================================================================================================
+
+F.ODBC.Connection!con.Close
+F.Intrinsic.Control.End
+
+'============================================================================================================================================================================================================================
+F.Intrinsic.Control.Label("Unload_Err")
+F.Intrinsic.Control.If(V.Ambient.ErrorNumber,<>,0)
+	Function.Intrinsic.String.Concat("Project: GAB_3524_AP_Terms_Disc_Setup.gas",V.Ambient.Newline,V.Ambient.Newline,"Subroutine: ",V.Ambient.CurrentSubroutine,V.Ambient.NewLine,"Error Occurred ",V.Ambient.ErrorNumber," with description ",V.Ambient.ErrorDescription,V.Local.sError)
+	F.Intrinsic.UI.Msgbox(V.Local.sError)
+Function.Intrinsic.Control.EndIf
+
+Program.Sub.subUnload.End
+
+Program.Sub.subApplyStyles.Start
+'Set Styles for each row
+
+F.Intrinsic.Control.SetErrorHandler("subApplyStyles_Err")
+F.Intrinsic.Control.ClearErrors
+
+V.Local.sError.Declare(String)
+'============================================================================================================================================================================================================================
+
+V.Local.iC.Declare(Long,1)
+V.Local.iRows.Declare(Long)
+V.Local.iNewRow.Declare(Long)
+
+'F.Intrinsic.Control.If(V.Args.LoadGSFG,=,True)
+'	F.Intrinsic.Math.Add(V.Screen.FrmTerms!gsfgTerms,1,V.Local.iNewRow)
+'	Gui.FrmTerms.gsfgTerms.Rows(V.Local.iNewRow)
+'F.Intrinsic.Control.EndIf
+
+F.Intrinsic.Math.Sub(V.Screen.FrmTerms!gsfgTerms.Rows,1,V.Local.iRows)
+F.Intrinsic.Control.For(V.Local.iC,1,V.Local.iRows,1)
+	Gui.FrmTerms.gsfgTerms.ApplyStyle(V.Local.iC,1)
+F.Intrinsic.Control.Next(V.Local.iC)
+
+F.Intrinsic.Control.ExitSub
+
+'============================================================================================================================================================================================================================
+F.Intrinsic.Control.Label("subApplyStyles_Err")
+F.Intrinsic.Control.If(V.Ambient.ErrorNumber,<>,0)
+	Function.Intrinsic.String.Concat("Project: GAB_3524_AP_Terms_Disc_Setup.gas",V.Ambient.Newline,V.Ambient.Newline,"Subroutine: ",V.Ambient.CurrentSubroutine,V.Ambient.NewLine,"Error Occurred ",V.Ambient.ErrorNumber," with description ",V.Ambient.ErrorDescription,V.Local.sError)
+	F.Intrinsic.UI.Msgbox(V.Local.sError)
+Function.Intrinsic.Control.EndIf
+
+Program.Sub.subApplyStyles.End
+
+Program.Sub.subLoadGSFG.Start
+'Load the GSFG from an UDT
+
+F.Intrinsic.Control.SetErrorHandler("subLoadGSFG_Err")
+F.Intrinsic.Control.ClearErrors
+
+V.Local.sError.Declare(String)
+'============================================================================================================================================================================================================================
+
+V.Local.bLoadGSFG.Declare(Boolean,True)
+
+Gui.FrmTerms.gsfgTerms.LoadFromUDT("V.uGlobal.uTerms","Terms::0*!*Days::1",2)
+F.Intrinsic.Control.CallSub(Subapplystyles,"LoadGSFG",V.Local.bLoadGSFG)
+
+F.Intrinsic.Control.ExitSub
+
+'============================================================================================================================================================================================================================
+F.Intrinsic.Control.Label("subLoadGSFG_Err")
+F.Intrinsic.Control.If(V.Ambient.ErrorNumber,<>,0)
+	Function.Intrinsic.String.Concat("Project: GAB_3524_AP_Terms_Disc_Setup.gas",V.Ambient.Newline,V.Ambient.Newline,"Subroutine: ",V.Ambient.CurrentSubroutine,V.Ambient.NewLine,"Error Occurred ",V.Ambient.ErrorNumber," with description ",V.Ambient.ErrorDescription,V.Local.sError)
+	F.Intrinsic.UI.Msgbox(V.Local.sError)
+Function.Intrinsic.Control.EndIf
+
+Program.Sub.subLoadGSFG.End
+
+program.sub.cmdSave_Click.start
+F.Intrinsic.Control.SetErrorHandler("cmdSave_click_Err")
+F.Intrinsic.Control.ClearErrors
+
+V.Local.sError.Declare(String)
+'============================================================================================================================================================================================================================
+
+V.Local.iCnt.Declare(Long,1)
+V.Local.iC.Declare(Long,-1)
+V.Local.sTerms.Declare(String)
+V.Local.iDays.Declare(Long)
+V.Local.iGrpOrd.Declare(Long)
+V.Local.sGrpName.Declare(String)
+V.Local.iRowTotal.Declare(Long)
+V.Local.iProgressBar.Declare(Long)
+V.Local.sCopyFrom.Declare(String)
+V.Local.sCopyTo.Declare(String)
+
+Gui.FrmTerms.gsfgTerms.Visible(False)
+Gui.FrmTerms.progress1.Visible(True)
+
+F.Intrinsic.String.Build("{0}\GAB_3524_AP_TERMS.MKD",V.Caller.DDFDir,V.Local.sCopyFrom)
+F.Intrinsic.String.Build("{0}\GAB_3524_AP_TERMS_BEFORE.MKD",V.Caller.DDFDir,V.Local.sCopyTo)
+F.Intrinsic.File.CopyOpenFile(V.Local.sCopyFrom,V.Local.sCopyTo)
+
+V.uGlobal.uTerms.Redim(-1,-1)
+F.ODBC.Connection!con.Execute("DELETE FROM GAB_3524_AP_TERMS;")
+
+F.Intrinsic.Math.Sub(V.Screen.FrmTerms!gsfgTerms.Rows,1,V.Local.iRowTotal)
+Gui.FrmTerms.progress1.Max(V.Local.iRowTotal)
+F.Intrinsic.Control.For(V.Local.iCnt,1,V.Local.iRowTotal,1)
+	Gui.FrmTerms.progress1.Value(V.Local.iCnt)
+	F.Intrinsic.Math.Add(V.Local.iC,1,V.Local.iC)
+	F.Intrinsic.Control.If(V.Local.iC,=,0)
+		V.uGlobal.uTerms.Redim(0,0)
+	F.Intrinsic.Control.Else
+		V.uGlobal.uTerms.RedimPreserve(0,V.Local.iC)
+	F.Intrinsic.Control.EndIf
+'Terms
+	Gui.FrmTerms.gsfgTerms.GetTextMatrix(0,V.Local.iCnt,V.Local.sTerms)
+	V.uGlobal.uTerms(V.Local.iC)!TERMS.Set(V.Local.sTerms)
+'Days
+	Gui.FrmTerms.gsfgTerms.GetTextMatrix(1,V.Local.iCnt,V.Local.iDays)
+	V.uGlobal.uTerms(V.Local.iC)!DAYS.Set(V.Local.iDays.Long)
+F.Intrinsic.Control.Next(V.Local.iCnt)
+
+F.ODBC.Connection!con.OpenRecordsetRW("rstSave","SELECT * FROM GAB_3524_AP_TERMS;")
+F.Intrinsic.Variable.SaveUDTToRecordset("con","rstSave","V.uGlobal.uTerms")
+F.ODBC.con!rstSave.Close
+
+F.ODBC.Connection!con.Execute("DELETE FROM GAB_3524_AP_TERMS WHERE DAYS = '0';")
+F.Intrinsic.Control.CallSub(Subpopulateudt)
+
+'F.Intrinsic.UI.Msgbox("Data Saved.","Complete")
+Gui.FrmTerms.gsfgTerms.Visible(True)
+Gui.FrmTerms.progress1.Visible(False)
+
+F.Intrinsic.Control.ExitSub
+
+'============================================================================================================================================================================================================================
+F.Intrinsic.Control.Label("cmdSave_click_Err")
+F.Intrinsic.Control.If(V.Ambient.ErrorNumber,<>,0)
+	Function.Intrinsic.String.Concat("Project: GAB_3524_AP_Terms_Disc_Setup.gas",V.Ambient.Newline,V.Ambient.Newline,"Subroutine: ",V.Ambient.CurrentSubroutine,V.Ambient.NewLine,"Error Occurred ",V.Ambient.ErrorNumber," with description ",V.Ambient.ErrorDescription,V.Local.sError)
+	F.Intrinsic.UI.Msgbox(V.Local.sError)
+Function.Intrinsic.Control.EndIf
+
+program.sub.cmdSave_Click.end
+
+Program.Sub.gsfgTerms_mouseup.Start
+F.Intrinsic.Control.SetErrorHandler("gsfgReport_mouseup_Err")
+F.Intrinsic.Control.ClearErrors
+
+V.Local.sError.Declare(String)
+'============================================================================================================================================================================================================================
+
+V.Local.iRow.Declare(Long)
+V.Local.iCol.Declare(Long)
+
+V.Local.iRow.Set(V.Screen.FrmTerms!gsfgTerms.Row)
+V.Local.iCol.Set(V.Screen.FrmTerms!gsfgTerms.Col)
+
+F.Intrinsic.Control.If(V.Args.MouseRow.Long,=,0)
+	F.Intrinsic.Control.AndIf(V.Local.iRow,=,1)
+	F.Intrinsic.UI.Sleep(1)
+F.Intrinsic.Control.Else
+	F.Intrinsic.Control.SelectCase(V.Local.iCol)
+		F.Intrinsic.Control.Case(2)
+			F.Intrinsic.Control.CallSub(Subrowadd,"Row",V.Local.iRow,"Col",V.Local.iCol)
+		F.Intrinsic.Control.Case(3)
+			F.Intrinsic.Control.CallSub(Subrowdel,"Row",V.Local.iRow,"Col",V.Local.iCol)
+	F.Intrinsic.Control.EndSelect
+F.Intrinsic.Control.EndIf
+
+F.Intrinsic.Control.ExitSub
+
+'============================================================================================================================================================================================================================
+F.Intrinsic.Control.Label("gsfgReport_mouseup_Err")
+F.Intrinsic.Control.If(V.Ambient.ErrorNumber,<>,0)
+	Function.Intrinsic.String.Concat("Project: GAB_3524_AP_Terms_Disc_Setup.gas",V.Ambient.Newline,V.Ambient.Newline,"Subroutine: ",V.Ambient.CurrentSubroutine,V.Ambient.NewLine,"Error Occurred ",V.Ambient.ErrorNumber," with description ",V.Ambient.ErrorDescription,V.Local.sError)
+	F.Intrinsic.UI.Msgbox(V.Local.sError)
+Function.Intrinsic.Control.EndIf
+
+Program.Sub.gsfgTerms_mouseup.End
+
+Program.Sub.subCreateTable.Start
+'Create tables if missing
+
+F.Intrinsic.Control.SetErrorHandler("subCreateTable_Err")
+F.Intrinsic.Control.ClearErrors
+
+V.Local.sError.Declare(String)
+'============================================================================================================================================================================================================================
+
+V.Local.bExists.Declare(Boolean)
+
+'GAB_FIN_STATE_REPORT
+F.ODBC.Connection!con.TableExists("GAB_3524_AP_TERMS",V.Local.bExists)
+F.Intrinsic.Control.If(V.Local.bExists,=,False)
+	F.ODBC.Connection!con.Execute("CREATE TABLE GAB_3524_AP_TERMS(TERMS CHAR(3),DAYS INTEGER);")
+F.Intrinsic.Control.EndIf
+
+F.Intrinsic.Control.ExitSub
+
+'============================================================================================================================================================================================================================
+F.Intrinsic.Control.Label("subCreateTable_Err")
+F.Intrinsic.Control.If(V.Ambient.ErrorNumber,<>,0)
+	Function.Intrinsic.String.Concat("Project: GAB_3524_AP_Terms_Disc_Setup.gas",V.Ambient.Newline,V.Ambient.Newline,"Subroutine: ",V.Ambient.CurrentSubroutine,V.Ambient.NewLine,"Error Occurred ",V.Ambient.ErrorNumber," with description ",V.Ambient.ErrorDescription,V.Local.sError)
+	F.Intrinsic.UI.Msgbox(V.Local.sError)
+Function.Intrinsic.Control.EndIf
+
+Program.Sub.subCreateTable.End
+
+Program.Sub.subPopulateUDT.Start
+'Populate the flexgrid with data if populated
+F.Intrinsic.Control.SetErrorHandler("subPopulateUDTs_Err")
+F.Intrinsic.Control.ClearErrors
+
+V.Local.sError.Declare(String)
+'============================================================================================================================================================================================================================
+
+V.Local.sSQL.Declare(String)
+V.Local.sRet.Declare(String)
+V.Local.iRet.Declare(Long)
+V.Local.bFileExists.Declare(Boolean)
+V.Local.sCopyFrom.Declare(String)
+V.Local.sCopyTo.Declare(String)
+
+F.Intrinsic.String.Build("{0}\GAB_3524_AP_TERMS.MKD",V.Caller.DDFDir,V.Local.sCopyFrom)
+F.Intrinsic.String.Build("{0}\GAB_3524_AP_TERMS_BEFORE.MKD",V.Caller.DDFDir,V.Local.sCopyTo)
+
+F.ODBC.Connection!con.OpenRecordsetRO("rstTerms","SELECT * FROM GAB_3524_AP_TERMS ORDER BY TERMS;")
+F.Intrinsic.Control.If(V.ODBC.con!rstTerms.EOF,=,False)
+	F.Intrinsic.Variable.LoadUDTFromRecordset("con","rstTerms","V.uGlobal.uTerms",False,100000)
+	F.Intrinsic.Control.CallSub(Subloadgsfg)
+	F.ODBC.con!rstTerms.Close
+F.Intrinsic.Control.Else
+	F.ODBC.con!rstTerms.Close
+	F.Intrinsic.File.Exists(V.Local.sCopyTo,V.Local.bFileExists)
+	F.Intrinsic.Control.If(V.Local.bFileExists,=,True)
+		F.Intrinsic.UI.Msgbox("Do you want to restore the orignal file?","Restore",4,V.Local.iRet)
+		F.Intrinsic.Control.If(V.Local.iRet,=,6)
+			F.Intrinsic.File.DeleteFile(V.Local.sCopyFrom)
+			F.Intrinsic.File.CopyFile(V.Local.sCopyTo,V.Local.sCopyFrom)
+			F.Intrinsic.UI.Msgbox("Please relaunch the program to populate the restored data.","Restore Complete")
+			F.Intrinsic.Control.CallSub(Subunload)
+		F.Intrinsic.Control.EndIf
+	F.Intrinsic.Control.EndIf
+F.Intrinsic.Control.EndIf
+
+F.Intrinsic.Control.ExitSub
+
+'============================================================================================================================================================================================================================
+F.Intrinsic.Control.Label("subPopulateUDTs_Err")
+F.Intrinsic.Control.If(V.Ambient.ErrorNumber,<>,0)
+	Function.Intrinsic.String.Concat("Project: GAB_3524_AP_Terms_Disc_Setup.gas",V.Ambient.Newline,V.Ambient.Newline,"Subroutine: ",V.Ambient.CurrentSubroutine,V.Ambient.NewLine,"Error Occurred ",V.Ambient.ErrorNumber," with description ",V.Ambient.ErrorDescription,V.Local.sError)
+	F.Intrinsic.UI.Msgbox(V.Local.sError)
+Function.Intrinsic.Control.EndIf
+
+Program.Sub.subPopulateUDT.End
+
+Program.Sub.subRowAdd.Start
+F.Intrinsic.Control.SetErrorHandler("subRowAdd_Err")
+F.Intrinsic.Control.ClearErrors
+
+V.Local.sError.Declare(String)
+'============================================================================================================================================================================================================================
+
+V.Local.iInsertRow.Declare(Long)
+V.Local.bLoadGSFG.Declare(Boolean,False)
+
+Gui.FrmTerms.gsfgTerms.Visible(False)
+
+F.Intrinsic.Math.Add(V.Args.Row,1,V.Local.iInsertRow)
+
+Gui.FrmTerms.gsfgTerms.InsertRow(V.Local.iInsertRow)
+
+F.Intrinsic.Control.CallSub(Subapplystyles,"LoadGSFG",V.Local.bLoadGSFG)
+
+Gui.FrmTerms.gsfgTerms.Visible(True)
+
+'============================================================================================================================================================================================================================
+F.Intrinsic.Control.Label("subRowAdd_Err")
+F.Intrinsic.Control.If(V.Ambient.ErrorNumber,<>,0)
+	Function.Intrinsic.String.Concat("Project: GAB_3524_AP_Terms_Disc_Setup.gas",V.Ambient.Newline,V.Ambient.Newline,"Subroutine: ",V.Ambient.CurrentSubroutine,V.Ambient.NewLine,"Error Occurred ",V.Ambient.ErrorNumber," with description ",V.Ambient.ErrorDescription,V.Local.sError)
+	F.Intrinsic.UI.Msgbox(V.Local.sError)
+Function.Intrinsic.Control.EndIf
+
+Program.Sub.subRowAdd.End
+
+Program.Sub.subRowDel.Start
+F.Intrinsic.Control.SetErrorHandler("subRowDel_Err")
+F.Intrinsic.Control.ClearErrors
+
+V.Local.sError.Declare(String)
+'============================================================================================================================================================================================================================
+
+V.Local.bLoadGSFG.Declare(Boolean,False)
+
+Gui.FrmTerms.gsfgTerms.Visible(False)
+
+F.Intrinsic.Control.If(V.Screen.FrmTerms!gsfgTerms.Rows,>,2)
+	Gui.FrmTerms.gsfgTerms.DeleteRow(V.Args.Row)
+F.Intrinsic.Control.Else
+	F.Intrinsic.UI.Msgbox("This is the last row and you cannot remove it. Please edit the data if needed and save.","Row Check")
+F.Intrinsic.Control.EndIf
+
+F.Intrinsic.Control.CallSub(Subapplystyles,"LoadGSFG",V.Local.bLoadGSFG)
+
+Gui.FrmTerms.gsfgTerms.Visible(True)
+
+'============================================================================================================================================================================================================================
+F.Intrinsic.Control.Label("subRowDel_Err")
+F.Intrinsic.Control.If(V.Ambient.ErrorNumber,<>,0)
+	Function.Intrinsic.String.Concat("Project: GAB_3524_AP_Terms_Disc_Setup.gas",V.Ambient.Newline,V.Ambient.Newline,"Subroutine: ",V.Ambient.CurrentSubroutine,V.Ambient.NewLine,"Error Occurred ",V.Ambient.ErrorNumber," with description ",V.Ambient.ErrorDescription,V.Local.sError)
+	F.Intrinsic.UI.Msgbox(V.Local.sError)
+Function.Intrinsic.Control.EndIf
+
+Program.Sub.subRowDel.End
+
+
