@@ -1,0 +1,609 @@
+﻿program.sub.screenSU.start
+gui.FrmInvoices..create
+gui.FrmInvoices..caption("Update Invoice AP Terms")
+gui.FrmInvoices..size(11775,6600)
+gui.FrmInvoices..minx(0)
+gui.FrmInvoices..miny(0)
+gui.FrmInvoices..position(0,0)
+gui.FrmInvoices..event(unload,subUnload)
+gui.FrmInvoices..alwaysontop(False)
+gui.FrmInvoices..fontname("Arial")
+gui.FrmInvoices..fontsize(7)
+gui.FrmInvoices..forecolor(0)
+gui.FrmInvoices..fontstyle(,,,,)
+gui.FrmInvoices..BackColor(-2147483633)
+gui.FrmInvoices..controlbox(True)
+gui.FrmInvoices..maxbutton(True)
+gui.FrmInvoices..minbutton(True)
+gui.FrmInvoices..mousepointer(1)
+gui.FrmInvoices..moveable(True)
+gui.FrmInvoices..sizeable(False)
+gui.FrmInvoices..ShowInTaskBar(True)
+gui.FrmInvoices..titlebar(True)
+
+gui.FrmInvoices.gsfgInvoices.create(gsflexgrid)
+gui.FrmInvoices.gsfgInvoices.FixedRows(0)
+gui.FrmInvoices.gsfgInvoices.FixedCols(0)
+gui.FrmInvoices.gsfgInvoices.visible(True)
+gui.FrmInvoices.gsfgInvoices.size(11330,5245)
+gui.FrmInvoices.gsfgInvoices.zorder(0)
+gui.FrmInvoices.gsfgInvoices.position(100,200)
+gui.FrmInvoices.gsfgInvoices.enabled(True)
+gui.FrmInvoices.cmdUpdate.create(button)
+gui.FrmInvoices.cmdUpdate.caption("Update")
+gui.FrmInvoices.cmdUpdate.visible(False)
+gui.FrmInvoices.cmdUpdate.size(800,400)
+gui.FrmInvoices.cmdUpdate.zorder(0)
+gui.FrmInvoices.cmdUpdate.position(200,5500)
+gui.FrmInvoices.cmdUpdate.enabled(True)
+gui.FrmInvoices.cmdUpdate.fontname("Arial")
+gui.FrmInvoices.cmdUpdate.fontsize(7)
+gui.FrmInvoices.cmdUpdate.event(click,cmdUpdate_Click)
+gui.FrmInvoices.cmdUpdate.defaultvalue("")
+gui.FrmInvoices.cmdUpdate.controlgroup(0)
+gui.FrmInvoices.progress1.create(progressbar)
+gui.FrmInvoices.progress1.visible(False)
+gui.FrmInvoices.progress1.size(6060,400)
+gui.FrmInvoices.progress1.zorder(0)
+gui.FrmInvoices.progress1.position(3500,5550)
+gui.FrmInvoices.progress1.enabled(True)
+gui.FrmInvoices.lblText.create(label,"***Enter Text***",False,1740,255,1,1500,5600,True,0,Arial,10,-2147483633,0 )
+gui.FrmInvoices.lblText.defaultvalue("")
+gui.FrmInvoices.lblText.controlgroup(0)
+gui.FrmInvoices.cmdUpdate.tabstop(True)
+gui.FrmInvoices.cmdUpdate.tabindex(23)
+program.sub.screenSU.End
+
+Program.Sub.Preflight.Start
+
+Variable.UDT.uData.Define("UPDATE",String,UPDATE)
+Variable.UDT.uData.Define("VENDOR",String,VENDOR)
+Variable.UDT.uData.Define("INVOICE",String,INVOICE)
+Variable.UDT.uData.Define("TERMS",String,TERMS)
+Variable.UDT.uData.Define("AMT_INVOICE",Float,AMT_INVOICE)
+Variable.UDT.uData.Define("DATE_INVOICE_DUE",String,DATE_INVOICE_DUE)
+Variable.UDT.uData.Define("DATE_INVOICE",String,DATE_INVOICE)
+Variable.UDT.uData.Define("DAYS",String,DAYS)
+Variable.UDT.uData.Define("NEW_DUE_DATE",String,NEW_DUE_DATE)
+Variable.UDT.uData.Define("DUE",String,DUE)
+Variable.uGlobal.uData.Declare("uData")
+Variable.UDT.uAP.Define("VENDOR",String,VENDOR)
+Variable.UDT.uAP.Define("BATCH_CODE",String,BATCH_CODE)
+Variable.UDT.uAP.Define("INVOICE",String,INVOICE)
+Variable.UDT.uAP.Define("DATE_INVOICE",String,DATE_INVOICE)
+Variable.UDT.uAP.Define("AMT_INVOICE",Float,AMT_INVOICE)
+Variable.UDT.uAP.Define("DATE_INVOICE_DUE",String,DATE_INVOICE_DUE)
+Variable.UDT.uAP.Define("DISCOUNT_INVOICE",Float,DISCOUNT_INVOICE)
+Variable.uGlobal.uAP.Declare("uAP")
+Program.Sub.Preflight.End
+
+Program.Sub.Main.Start
+'This program will allow you to update AP Terms on Vendor invoices when the initial due date is passed for the discount
+
+F.Intrinsic.Control.SetErrorHandler("Main_Err")
+F.Intrinsic.Control.ClearErrors
+
+V.Local.sError.Declare(String)
+'------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+V.Local.bExists.Declare(Boolean)
+
+F.ODBC.Connection!con.OpenConnection(V.Ambient.PDSN,V.Ambient.PUser,V.Ambient.PPass)
+
+F.ODBC.Connection!con.TableExists("GAB_3524_AP_TERMS",V.Local.bExists)
+F.Intrinsic.Control.If(V.Local.bExists,=,False)
+	F.Intrinsic.UI.Msgbox("Please run Accounts Payable > Transactions > AP Terms Discount Setup.","Table Check")
+	F.Intrinsic.Control.CallSub(Subunload)
+F.Intrinsic.Control.EndIf
+
+F.Intrinsic.Control.CallSub(Subbuildstyles)
+F.Intrinsic.Control.CallSub(Subap)
+
+'------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+F.Intrinsic.Control.Label("Main_Err")
+F.Intrinsic.Control.If(V.Ambient.ErrorNumber,<>,0)
+	F.Intrinsic.String.Concat("Project: GAB_3524_AP_Terms_Disc_Update.gas",V.Ambient.Newline,V.Ambient.Newline,"Subroutine: ",V.Ambient.CurrentSubroutine,V.Ambient.NewLine,"Error Occurred ",V.Ambient.ErrorNumber," with description ",V.Ambient.ErrorDescription,V.Local.sError)
+	F.Intrinsic.UI.Msgbox(V.Local.sError)
+F.Intrinsic.Control.EndIf
+
+Program.Sub.Main.End
+
+Program.Sub.subBuildStyles.Start
+'Define Build Styles for Flex Grid gsfgInvoice
+
+F.Intrinsic.Control.SetErrorHandler("subBuildStyles_Err")
+F.Intrinsic.Control.ClearErrors
+
+V.Local.sError.Declare(String)
+'------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+'Define Number of Columns and Fixed Columns in Flex Grid
+'Fixed Column for Row Number
+Gui.FrmInvoices.gsfgInvoices.Cols(10)
+
+'Temp Set Row Count to 2 (So that Column Header can be Defined)
+'If No Data is Found Later... Rows will Remain at 1 for the Fixed Header
+Gui.FrmInvoices.gsfgInvoices.Rows(2)
+Gui.FrmInvoices.gsfgInvoices.FixedRows(1)
+
+'Update
+Gui.FrmInvoices.gsfgInvoices.TextMatrix(0,0,"Update")
+Gui.FrmInvoices.gsfgInvoices.ColWidth(0,800)
+Gui.FrmInvoices.gsfgInvoices.BuildStyle(1,0,"Format","Alignment",4)
+Gui.FrmInvoices.gsfgInvoices.BuildStyle(2,0,"Type","Checkbox",)
+Gui.FrmInvoices.gsfgInvoices.BuildStyle(2,0,"Format","Alignment",4)
+Gui.FrmInvoices.gsfgInvoices.BuildStyle(3,0,"Type","Checkbox",)
+Gui.FrmInvoices.gsfgInvoices.BuildStyle(3,0,"Format","Alignment",4)
+Gui.FrmInvoices.gsfgInvoices.BuildStyle(4,0,"Type","Checkbox",)
+Gui.FrmInvoices.gsfgInvoices.BuildStyle(4,0,"Format","Alignment",4)
+
+'Vendor
+Gui.FrmInvoices.gsfgInvoices.TextMatrix(1,0,"Vendor")
+Gui.FrmInvoices.gsfgInvoices.ColWidth(1,1000)
+Gui.FrmInvoices.gsfgInvoices.BuildStyle(1,1,"Format","Alignment",2)
+Gui.FrmInvoices.gsfgInvoices.BuildStyle(2,1,"Type","Locked",True)
+Gui.FrmInvoices.gsfgInvoices.BuildStyle(2,1,"Format","Alignment",2)
+Gui.FrmInvoices.gsfgInvoices.BuildStyle(3,1,"Type","Locked",True)
+Gui.FrmInvoices.gsfgInvoices.BuildStyle(3,1,"Format","Alignment",2)
+Gui.FrmInvoices.gsfgInvoices.BuildStyle(4,1,"Type","Locked",True)
+Gui.FrmInvoices.gsfgInvoices.BuildStyle(4,1,"Format","Alignment",2)
+
+'Invoice
+Gui.FrmInvoices.gsfgInvoices.TextMatrix(2,0,"Invoice")
+Gui.FrmInvoices.gsfgInvoices.ColWidth(2,1200)
+Gui.FrmInvoices.gsfgInvoices.BuildStyle(1,2,"Format","Alignment",2)
+Gui.FrmInvoices.gsfgInvoices.BuildStyle(2,2,"Type","Locked",True)
+Gui.FrmInvoices.gsfgInvoices.BuildStyle(2,2,"Format","Alignment",2)
+Gui.FrmInvoices.gsfgInvoices.BuildStyle(3,2,"Type","Locked",True)
+Gui.FrmInvoices.gsfgInvoices.BuildStyle(3,2,"Format","Alignment",2)
+Gui.FrmInvoices.gsfgInvoices.BuildStyle(4,2,"Type","Locked",True)
+Gui.FrmInvoices.gsfgInvoices.BuildStyle(4,2,"Format","Alignment",2)
+
+'Terms
+Gui.FrmInvoices.gsfgInvoices.TextMatrix(3,0,"Terms")
+Gui.FrmInvoices.gsfgInvoices.ColWidth(3,1200)
+Gui.FrmInvoices.gsfgInvoices.BuildStyle(1,3,"Format","Alignment",2)
+Gui.FrmInvoices.gsfgInvoices.BuildStyle(2,3,"Type","Locked",True)
+Gui.FrmInvoices.gsfgInvoices.BuildStyle(2,3,"Format","Alignment",2)
+Gui.FrmInvoices.gsfgInvoices.BuildStyle(3,3,"Type","Locked",True)
+Gui.FrmInvoices.gsfgInvoices.BuildStyle(3,3,"Format","Alignment",2)
+Gui.FrmInvoices.gsfgInvoices.BuildStyle(4,3,"Type","Locked",True)
+Gui.FrmInvoices.gsfgInvoices.BuildStyle(4,3,"Format","Alignment",2)
+
+'Invoice Amount
+Gui.FrmInvoices.gsfgInvoices.TextMatrix(4,0,"Invoice Amount")
+Gui.FrmInvoices.gsfgInvoices.ColWidth(4,1500)
+Gui.FrmInvoices.gsfgInvoices.BuildStyle(1,4,"Format","Alignment",2)
+Gui.FrmInvoices.gsfgInvoices.BuildStyle(2,4,"Type","Locked",True)
+Gui.FrmInvoices.gsfgInvoices.BuildStyle(2,4,"Format","Alignment",2)
+Gui.FrmInvoices.gsfgInvoices.BuildStyle(3,4,"Type","Locked",True)
+Gui.FrmInvoices.gsfgInvoices.BuildStyle(3,4,"Format","Alignment",2)
+Gui.FrmInvoices.gsfgInvoices.BuildStyle(4,4,"Type","Locked",True)
+Gui.FrmInvoices.gsfgInvoices.BuildStyle(4,4,"Format","Alignment",2)
+
+'Invoice Date
+Gui.FrmInvoices.gsfgInvoices.TextMatrix(5,0,"Invoice Date")
+Gui.FrmInvoices.gsfgInvoices.ColWidth(5,1200)
+Gui.FrmInvoices.gsfgInvoices.BuildStyle(1,5,"Format","Alignment",2)
+Gui.FrmInvoices.gsfgInvoices.BuildStyle(2,5,"Type","Locked",True)
+Gui.FrmInvoices.gsfgInvoices.BuildStyle(2,5,"Format","Alignment",2)
+Gui.FrmInvoices.gsfgInvoices.BuildStyle(3,5,"Type","Locked",True)
+Gui.FrmInvoices.gsfgInvoices.BuildStyle(3,5,"Format","Alignment",2)
+Gui.FrmInvoices.gsfgInvoices.BuildStyle(4,5,"Type","Locked",True)
+Gui.FrmInvoices.gsfgInvoices.BuildStyle(4,5,"Format","Alignment",2)
+
+'Due Date
+Gui.FrmInvoices.gsfgInvoices.TextMatrix(6,0,"Due Date")
+Gui.FrmInvoices.gsfgInvoices.ColWidth(6,1200)
+Gui.FrmInvoices.gsfgInvoices.BuildStyle(1,6,"Format","Alignment",2)
+Gui.FrmInvoices.gsfgInvoices.BuildStyle(2,6,"Type","Locked",True)
+Gui.FrmInvoices.gsfgInvoices.BuildStyle(2,6,"Format","Alignment",2)
+Gui.FrmInvoices.gsfgInvoices.BuildStyle(3,6,"Type","Locked",True)
+Gui.FrmInvoices.gsfgInvoices.BuildStyle(3,6,"Format","Alignment",2)
+Gui.FrmInvoices.gsfgInvoices.BuildStyle(4,6,"Type","Locked",True)
+Gui.FrmInvoices.gsfgInvoices.BuildStyle(4,6,"Format","Alignment",2)
+
+'New Due Date
+Gui.FrmInvoices.gsfgInvoices.TextMatrix(7,0,"New Due Date")
+Gui.FrmInvoices.gsfgInvoices.ColWidth(7,1200)
+Gui.FrmInvoices.gsfgInvoices.BuildStyle(1,7,"Format","Alignment",2)
+Gui.FrmInvoices.gsfgInvoices.BuildStyle(2,7,"Type","Locked",True)
+Gui.FrmInvoices.gsfgInvoices.BuildStyle(2,7,"Format","Alignment",2)
+Gui.FrmInvoices.gsfgInvoices.BuildStyle(2,7,"Color","Back",V.Color.White)
+Gui.FrmInvoices.gsfgInvoices.BuildStyle(2,7,"Color","Fore",V.Color.Black)
+Gui.FrmInvoices.gsfgInvoices.BuildStyle(3,7,"Type","Locked",True)
+Gui.FrmInvoices.gsfgInvoices.BuildStyle(3,7,"Format","Alignment",2)
+Gui.FrmInvoices.gsfgInvoices.BuildStyle(3,7,"Color","Back",V.Color.LtRed)
+Gui.FrmInvoices.gsfgInvoices.BuildStyle(3,7,"Color","Fore",V.Color.Black)
+Gui.FrmInvoices.gsfgInvoices.BuildStyle(4,7,"Type","Locked",True)
+Gui.FrmInvoices.gsfgInvoices.BuildStyle(4,7,"Format","Alignment",2)
+Gui.FrmInvoices.gsfgInvoices.BuildStyle(4,7,"Color","Back",V.Color.LtGreen)
+Gui.FrmInvoices.gsfgInvoices.BuildStyle(4,7,"Color","Fore",V.Color.Black)
+
+'Days
+Gui.FrmInvoices.gsfgInvoices.TextMatrix(8,0,"Days")
+Gui.FrmInvoices.gsfgInvoices.ColWidth(8,800)
+Gui.FrmInvoices.gsfgInvoices.BuildStyle(1,8,"Format","Alignment",4)
+Gui.FrmInvoices.gsfgInvoices.BuildStyle(2,8,"Type","Locked",True)
+Gui.FrmInvoices.gsfgInvoices.BuildStyle(2,8,"Format","Alignment",4)
+Gui.FrmInvoices.gsfgInvoices.BuildStyle(3,8,"Type","Locked",True)
+Gui.FrmInvoices.gsfgInvoices.BuildStyle(3,8,"Format","Alignment",4)
+Gui.FrmInvoices.gsfgInvoices.BuildStyle(4,8,"Type","Locked",True)
+Gui.FrmInvoices.gsfgInvoices.BuildStyle(4,8,"Format","Alignment",4)
+
+'Due
+Gui.FrmInvoices.gsfgInvoices.TextMatrix(9,0,"Due")
+Gui.FrmInvoices.gsfgInvoices.ColWidth(9,800)
+Gui.FrmInvoices.gsfgInvoices.BuildStyle(1,9,"Format","Alignment",4)
+Gui.FrmInvoices.gsfgInvoices.BuildStyle(2,9,"Type","Locked",True)
+Gui.FrmInvoices.gsfgInvoices.BuildStyle(2,9,"Format","Alignment",4)
+Gui.FrmInvoices.gsfgInvoices.BuildStyle(2,9,"Color","Back",V.Color.White)
+Gui.FrmInvoices.gsfgInvoices.BuildStyle(2,9,"Color","Fore",V.Color.Black)
+Gui.FrmInvoices.gsfgInvoices.BuildStyle(3,9,"Type","Locked",True)
+Gui.FrmInvoices.gsfgInvoices.BuildStyle(3,9,"Format","Alignment",4)
+Gui.FrmInvoices.gsfgInvoices.BuildStyle(3,9,"Color","Back",V.Color.LtRed)
+Gui.FrmInvoices.gsfgInvoices.BuildStyle(3,9,"Color","Fore",V.Color.Black)
+Gui.FrmInvoices.gsfgInvoices.BuildStyle(4,9,"Type","Locked",True)
+Gui.FrmInvoices.gsfgInvoices.BuildStyle(4,9,"Format","Alignment",4)
+Gui.FrmInvoices.gsfgInvoices.BuildStyle(4,9,"Color","Back",V.Color.LtGreen)
+Gui.FrmInvoices.gsfgInvoices.BuildStyle(4,9,"Color","Fore",V.Color.Black)
+
+'ApplyStyles to row 0
+Gui.FrmInvoices.gsfgInvoices.ApplyStyle(0,1)
+
+F.Intrinsic.Control.ExitSub
+
+'------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+F.Intrinsic.Control.Label("subBuildStyles_Err")
+F.Intrinsic.Control.If(V.Ambient.ErrorNumber,<>,0)
+	F.Intrinsic.String.Concat("Project: GAB_3524_AP_Terms_Disc_Update.gas",V.Ambient.Newline,V.Ambient.Newline,"Subroutine: ",V.Ambient.CurrentSubroutine,V.Ambient.NewLine,"Error Occurred ",V.Ambient.ErrorNumber," with description ",V.Ambient.ErrorDescription,V.Local.sError)
+	F.Intrinsic.UI.Msgbox(V.Local.sError)
+F.Intrinsic.Control.EndIf
+
+Program.Sub.subBuildStyles.End
+
+Program.Sub.subUnload.Start
+'Close Connection
+
+F.Intrinsic.Control.SetErrorHandler("subUnload_Err")
+F.Intrinsic.Control.ClearErrors
+
+V.Local.sError.Declare(String)
+'------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+F.ODBC.Connection!con.Close
+F.Intrinsic.Control.End
+
+'------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+F.Intrinsic.Control.Label("subUnload_Err")
+F.Intrinsic.Control.If(V.Ambient.ErrorNumber,<>,0)
+	F.Intrinsic.String.Concat("Project: GAB_3524_AP_Terms_Disc_Update.gas",V.Ambient.Newline,V.Ambient.Newline,"Subroutine: ",V.Ambient.CurrentSubroutine,V.Ambient.NewLine,"Error Occurred ",V.Ambient.ErrorNumber," with description ",V.Ambient.ErrorDescription,V.Local.sError)
+	F.Intrinsic.UI.Msgbox(V.Local.sError)
+F.Intrinsic.Control.EndIf
+
+Program.Sub.subUnload.End
+
+Program.Sub.subApplyStyles.Start
+'Set Styles for Each Row
+
+F.Intrinsic.Control.SetErrorHandler("subApplyStyles_Err")
+F.Intrinsic.Control.ClearErrors
+
+V.Local.sError.Declare(String)
+'------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+V.Local.iC.Declare(Long)
+V.Local.iRows.Declare(Long)
+V.Local.sDue.Declare(String)
+
+F.Intrinsic.Math.Sub(V.Screen.FrmInvoices!gsfgInvoices.Rows,1,V.Local.iRows)
+
+F.Intrinsic.Control.For(V.Local.iC,1,V.Local.iRows,1)
+	Gui.FrmInvoices.gsfgInvoices.GetTextMatrix(9,V.Local.iC,V.Local.sDue)
+
+	F.Intrinsic.Control.If(V.Local.sDue,=,"N")
+		Gui.FrmInvoices.gsfgInvoices.ApplyStyle(V.Local.iC,2)
+	F.Intrinsic.Control.ElseIf(V.Local.sDue,=,"Past Due")
+		Gui.FrmInvoices.gsfgInvoices.ApplyStyle(V.Local.iC,3)
+	F.Intrinsic.Control.ElseIf(V.Local.sDue,=,"Y")
+		Gui.FrmInvoices.gsfgInvoices.ApplyStyle(V.Local.iC,4)
+	F.Intrinsic.Control.EndIf
+F.Intrinsic.Control.Next(V.Local.iC)
+
+F.Intrinsic.Control.ExitSub
+
+'------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+F.Intrinsic.Control.Label("subApplyStyles_Err")
+F.Intrinsic.Control.If(V.Ambient.ErrorNumber,<>,0)
+	F.Intrinsic.String.Concat("Project: GAB_3524_AP_Terms_Disc_Update.gas",V.Ambient.Newline,V.Ambient.Newline,"Subroutine: ",V.Ambient.CurrentSubroutine,V.Ambient.NewLine,"Error Occurred ",V.Ambient.ErrorNumber," with description ",V.Ambient.ErrorDescription,V.Local.sError)
+	F.Intrinsic.UI.Msgbox(V.Local.sError)
+F.Intrinsic.Control.EndIf
+
+Program.Sub.subApplyStyles.End
+
+Program.Sub.subLoadGSFG.Start
+'Load the GSFG from an UDT
+
+F.Intrinsic.Control.SetErrorHandler("subLoadGSFG_Err")
+F.Intrinsic.Control.ClearErrors
+
+V.Local.sError.Declare(String)
+'------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+Gui.FrmInvoices.gsfgInvoices.LoadFromUDT("V.uGlobal.uData","Update::0*!*Vendor::1*!*Invoice::2*!*Terms::3*!*Amt_Invoice::4*!*Date_Invoice::5*!*Date_Invoice_Due::6*!*New_Due_Date::7*!*Days::8*!*Due::9",2)
+F.Intrinsic.Control.CallSub(Subapplystyles)
+
+Gui.FrmInvoices..Visible(True)
+Gui.FrmInvoices.gsfgInvoices.Visible(True)
+Gui.FrmInvoices.cmdUpdate.Visible(True)
+Gui.FrmInvoices.progress1.Visible(False)
+Gui.FrmInvoices.lblText.Visible(False)
+
+'------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+F.Intrinsic.Control.Label("subLoadGSFG_Err")
+F.Intrinsic.Control.If(V.Ambient.ErrorNumber,<>,0)
+	F.Intrinsic.String.Concat("Project: GAB_3524_AP_Terms_Disc_Update.gas",V.Ambient.Newline,V.Ambient.Newline,"Subroutine: ",V.Ambient.CurrentSubroutine,V.Ambient.NewLine,"Error Occurred ",V.Ambient.ErrorNumber," with description ",V.Ambient.ErrorDescription,V.Local.sError)
+	F.Intrinsic.UI.Msgbox(V.Local.sError)
+F.Intrinsic.Control.EndIf
+
+Program.Sub.subLoadGSFG.End
+
+Program.Sub.subuData.Start
+'Set Data for uData UDT
+
+'F.Intrinsic.Control.SetErrorHandler("subuData_Err")
+'F.Intrinsic.Control.ClearErrors
+'
+'V.Local.sError.Declare(String)
+'------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+V.Local.sSQL.Declare(String)
+V.Local.sRet.Declare(String)
+V.Local.iCnt.Declare(Long,0)
+V.Local.iCnt2.Declare(Long,0)
+V.Local.iC.Declare(Long,-1)
+V.Local.sVendor.Declare(String)
+V.Local.sInvoice.Declare(String)
+V.Local.sInvoiceAmt.Declare(String)
+V.Local.iBatchCode.Declare(Long)
+V.Local.sTerms.Declare(String)
+V.Local.sTermsName.Declare(String)
+V.Local.dDateInvoice.Declare(Date)
+V.Local.dDueDate.Declare(Date)
+V.Local.dNewDueDate.Declare(Date)
+V.Local.iDays.Declare(Long)
+V.Local.iDateDiff.Declare(Long)
+V.Local.fDiscount.Declare(Float)
+V.Local.fInv.Declare
+
+F.Intrinsic.Control.If(V.uGlobal.uAP.UBound,<=,0)
+	Gui.FrmInvoices.progress1.Max(1)
+F.Intrinsic.Control.Else
+	Gui.FrmInvoices.progress1.Max(V.uGlobal.uAP.UBound)
+F.Intrinsic.Control.EndIf
+
+F.Intrinsic.Control.If(V.uGlobal.uAP.UBound,<,0)
+	Gui.FrmInvoices..Visible(False)
+	F.Intrinsic.UI.Msgbox("No Invoices to update.","Validate")
+	F.Intrinsic.Control.CallSub(Subunload)
+F.Intrinsic.Control.Else
+	Gui.FrmInvoices..Visible(True)
+	Gui.FrmInvoices.gsfgInvoices.Visible(False)
+	Gui.FrmInvoices.progress1.Visible(True)
+	Gui.FrmInvoices.lblText.Visible(True)
+	Gui.FrmInvoices.lblText.Caption("Loading Data....")
+	F.Intrinsic.Control.For(V.Local.iCnt,0,V.uGlobal.uAP.UBound,1)
+		Gui.FrmInvoices.progress1.Value(V.Local.iCnt)
+		V.Local.sVendor.Set(V.uGlobal.uAP(V.Local.iCnt)!VENDOR)
+		F.Intrinsic.Control.If(V.Local.sVendor.Trim,<>,"")
+			V.Local.sInvoice.Set(V.uGlobal.uAP(V.Local.iCnt)!INVOICE)
+			V.Local.sInvoiceAmt.Set(V.uGlobal.uAP(V.Local.iCnt)!AMT_INVOICE)
+			V.Local.dDueDate.Set(V.uGlobal.uAP(V.Local.iCnt)!DATE_INVOICE_DUE)
+			V.Local.dDateInvoice.Set(V.uGlobal.uAP(V.Local.iCnt)!DATE_INVOICE)
+			V.Local.fDiscount.Set(V.uGlobal.uAP(V.Local.iCnt)!DISCOUNT_INVOICE)
+			
+			F.Intrinsic.String.Build("SELECT DISTINCT BATCH_CODE FROM V_AP_OPEN_ITEMS WHERE VENDOR = '{0}' AND INVOICE = '{1}' AND AMT_INVOICE = '{2}' AND BATCH_CODE = 11;",V.Local.sVendor,V.Local.sInvoice,V.Local.sInvoiceAmt,V.Local.sSQL)
+			F.ODBC.Connection!con.ExecuteAndReturn(V.Local.sSQL,V.Local.iBatchCode)
+			F.Intrinsic.Control.If(V.Local.iBatchCode,<>,11)
+				F.Intrinsic.Math.Add(V.Local.iC,1,V.Local.iC)
+				V.uGlobal.uData.RedimPreserve(0,V.Local.iC)
+				V.uGlobal.uData(V.Local.iC)!UPDATE.Set(1)
+				V.uGlobal.uData(V.Local.iC)!VENDOR.Set(V.Local.sVendor)
+				V.uGlobal.uData(V.Local.iC)!INVOICE.Set(V.Local.sInvoice)
+			'Get Terms from the V_Vendor_Pay_To and V_AP_Terms
+				F.Intrinsic.String.Build("SELECT PAYMENT_TERMS FROM V_VENDOR_PAY_TO WHERE VENDOR = '{0}';",V.Local.sVendor,V.Local.sSQL)
+				F.ODBC.Connection!con.ExecuteAndReturn(V.Local.sSQL,V.Local.sTerms)
+				F.Intrinsic.String.Build("SELECT TERMS_MESSAGE FROM V_AP_TERMS WHERE TERMS_CODE = '{0}';",V.Local.sTerms,V.Local.sSQL)
+				F.ODBC.Connection!con.ExecuteAndReturn(V.Local.sSQL,V.Local.sTermsName)
+				V.uGlobal.uData(V.Local.iC)!TERMS.Set(V.Local.sTermsName)
+				
+				V.uGlobal.uData(V.Local.iC)!AMT_INVOICE.Set(V.Local.sInvoiceAmt)
+				V.uGlobal.uData(V.Local.iC)!DATE_INVOICE.Set(V.Local.dDateInvoice)
+				V.uGlobal.uData(V.Local.iC)!DATE_INVOICE_DUE.Set(V.Local.dDueDate)
+			'Set new due date using the days from GAB_3524_AP_TERMS
+				F.Intrinsic.String.Build("SELECT DAYS FROM GAB_3524_AP_TERMS WHERE TERMS= '{0}';",V.Local.sTerms,V.Local.sSQL)
+				F.ODBC.Connection!con.ExecuteAndReturn(V.Local.sSQL,V.Local.iDays)
+				F.Intrinsic.Date.DateAdd("D",V.Local.iDays,V.Local.dDateInvoice,V.Local.dNewDueDate)
+				V.uGlobal.uData(V.Local.iC)!NEW_DUE_DATE.Set(V.Local.dNewDueDate)
+				V.uGlobal.uData(V.Local.iC)!DAYS.Set(V.Local.iDays)
+			'Set Due flag
+				F.Intrinsic.Control.If(V.Local.fDiscount,=,0.00)
+					F.Intrinsic.Control.AndIf(V.Local.dDueDate,<,V.Ambient.Date)
+						V.uGlobal.uData(V.Local.iC)!DUE.Set("Past Due")
+				F.Intrinsic.Control.ElseIf(V.Local.fDiscount,=,0.00)
+					F.Intrinsic.Control.AndIf(V.Local.dDueDate,=,V.Local.dNewDueDate)
+						V.uGlobal.uData(V.Local.iC)!DUE.Set("Y")
+				F.Intrinsic.Control.ElseIf(V.Local.dDueDate,<,V.Local.dNewDueDate)
+					V.uGlobal.uData(V.Local.iC)!DUE.Set("N")
+				F.Intrinsic.Control.EndIf
+			F.Intrinsic.Control.Else
+			F.Intrinsic.Control.EndIf
+		F.Intrinsic.Control.EndIf
+	F.Intrinsic.Control.Next(V.Local.iCnt)
+F.Intrinsic.Control.EndIf
+
+F.Intrinsic.Control.CallSub(Subloadgsfg)
+
+'------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+'F.Intrinsic.Control.Label("subuData_Err")
+'F.Intrinsic.Control.If(V.Ambient.ErrorNumber,<>,0)
+'	F.Intrinsic.String.Concat("Project: GAB_3524_AP_Terms_Disc_Update.gas",V.Ambient.Newline,V.Ambient.Newline,"Subroutine: ",V.Ambient.CurrentSubroutine,V.Ambient.NewLine,"Error Occurred ",V.Ambient.ErrorNumber," with description ",V.Ambient.ErrorDescription,V.Local.sError)
+'	F.Intrinsic.UI.Msgbox(V.Local.sError)
+'F.Intrinsic.Control.EndIf
+Program.Sub.subuData.End
+
+program.sub.cmdUpdate_Click.start
+'Update AP_OPEN_ITEMS table for the records in the felxgrid checked for updating
+
+F.Intrinsic.Control.SetErrorHandler("cmdUpdate_Click_Err")
+F.Intrinsic.Control.ClearErrors
+
+V.Local.sError.Declare(String)
+'------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+V.Local.sSQL.Declare(String)
+V.Local.iCnt.Declare(Long,0)
+V.Local.iC.Declare(Long,0)
+V.Local.iRow.Declare(Long,1)
+V.Local.sUpdate.Declare(String)
+V.Local.sVendor.Declare(String)
+V.Local.sInvoice.Declare(String)
+V.Local.sInvoiceAmt.Declare(Float)
+V.Local.dDueDate.Declare(Date)
+V.Local.sDueDate.Declare(String)
+V.Local.sJDueDate.Declare(String)
+V.Local.iTotalDays.Declare(Long,0)
+V.Local.sTotalDays.Declare(String)
+V.Local.iDay1.Declare(Long)
+V.Local.iDay2.Declare(Long)
+V.Local.iMonth1.Declare(Long)
+V.Local.iMonth2.Declare(Long)
+V.Local.iYear.Declare(Long)
+V.Local.sYear.Declare(String)
+V.Local.dEOMDate.Declare(Date)
+V.Local.bLoop.Declare(Boolean)
+V.Local.RowUBound.Declare(Long)
+V.Local.sDue.Declare(String)
+
+Gui.FrmInvoices.gsfgInvoices.Visible(False)
+Gui.FrmInvoices.progress1.Visible(True)
+Gui.FrmInvoices.lblText.Visible(True)
+Gui.FrmInvoices.lblText.Caption("Updating Data....")
+
+F.Intrinsic.Math.Sub(V.Screen.FrmInvoices!gsfgInvoices.Rows,1,V.Local.RowUBound)
+Gui.FrmInvoices.progress1.Max(V.Local.RowUBound)
+
+F.Intrinsic.Control.For(V.Local.iCnt,1,V.Local.RowUBound,1)
+	Gui.FrmInvoices.progress1.Value(V.Local.iCnt)
+	Gui.FrmInvoices.gsfgInvoices.GetTextMatrix(0,V.Local.iRow,V.Local.sUpdate)
+	Gui.FrmInvoices.gsfgInvoices.GetTextMatrix(1,V.Local.iRow,V.Local.sVendor)
+	Gui.FrmInvoices.gsfgInvoices.GetTextMatrix(2,V.Local.iRow,V.Local.sInvoice)
+	Gui.FrmInvoices.gsfgInvoices.GetTextMatrix(4,V.Local.iRow,V.Local.sInvoiceAmt)
+	Gui.FrmInvoices.gsfgInvoices.GetTextMatrix(7,V.Local.iRow,V.Local.dDueDate)
+	F.Intrinsic.String.Format(V.Local.dDueDate,"MMDDYY",V.Local.sDueDate)
+	Gui.FrmInvoices.gsfgInvoices.GetTextMatrix(9,V.Local.iRow,V.Local.sDue)
+
+	F.Intrinsic.Control.If(V.Local.sDue,<>,"Y")
+		'Calculate Julian Date for table update--------------------------------------------------------------------------
+			V.Local.iC.Set(0)
+			V.Local.iTotalDays.Set(0)
+			V.Local.bLoop.Set(False)
+
+			F.Intrinsic.Date.Month(V.Local.dDueDate,V.Local.iMonth1)
+			F.Intrinsic.Math.Sub(V.Local.iMonth1,1,V.Local.iMonth2)
+			F.Intrinsic.Date.Day(V.Local.dDueDate,V.Local.iDay1)
+			F.Intrinsic.Date.Year(V.Local.dDueDate,V.Local.iYear)
+
+			F.Intrinsic.Control.For(V.Local.iC,1,V.Local.iMonth2,1)
+				V.Local.bLoop.Set(True)
+				F.Intrinsic.String.Build("{0}/1/{1}",V.Local.iMonth2,V.Local.iYear,V.Local.dEOMDate)
+				F.Intrinsic.Date.EndOfMonth(V.Local.dEOMDate,V.Local.dEOMDate)
+				F.Intrinsic.Date.Day(V.Local.dEOMDate,V.Local.iDay2)
+				F.Intrinsic.Math.Add(V.Local.iDay2,V.Local.iTotalDays,V.Local.iTotalDays)
+			F.Intrinsic.Control.Next(V.Local.iC)
+
+			F.Intrinsic.Control.If(V.Local.bLoop,=,True)
+				F.Intrinsic.Math.Add(V.Local.iTotalDays,V.Local.iDay1,V.Local.iTotalDays)
+			F.Intrinsic.Control.Else
+				V.Local.iTotalDays.Set(V.Local.iDay1)
+			F.Intrinsic.Control.EndIf
+
+			F.Intrinsic.String.Right(V.Local.iYear,2,V.Local.sYear)
+			F.Intrinsic.String.LPad(V.Local.iTotalDays,"0",3,V.Local.sTotalDays)
+			F.Intrinsic.String.Build("{0}{1}",V.Local.sYear,V.Local.sTotalDays,V.Local.sJDueDate)
+		'Calculate Julian Date for table update--------------------------------------------------------------------------
+
+		F.Intrinsic.Control.If(V.Local.sUpdate,=,"1")
+'			F.Intrinsic.String.Build("UPDATE AP_OPEN_ITEMS SET DATE_INVOICE_DUE = '{0}',DATE_INVOICE_DUE_J = '{1}' WHERE VENDOR = '{2}' AND INVOICE = '{3}' AND AMT_INVOICE = '{4}' AND BATCH_CODE = 10;",V.Local.sDueDate,V.Local.sJDueDate,V.Local.sVendor,V.Local.sInvoice,V.Local.sInvoiceAmt,V.Local.sSQL)
+			F.Intrinsic.String.Build("UPDATE AP_OPEN_ITEMS SET DATE_INVOICE_DUE = '{0}',DATE_INVOICE_DUE_J = '{1}',DISCOUNT_INVOICE = '0.00' WHERE RTRIM(LTRIM(VENDOR)) = '{2}' AND RTRIM(LTRIM(INVOICE)) = '{3}' AND AMT_INVOICE = '{4}' AND BATCH_CODE = 10;",V.Local.sDueDate,V.Local.sJDueDate,V.Local.sVendor.Trim,V.Local.sInvoice.Trim,V.Local.sInvoiceAmt.Float,V.Local.sSQL)
+			F.ODBC.Connection!con.Execute(V.Local.sSQL)
+		F.Intrinsic.Control.EndIf
+	F.Intrinsic.Control.EndIf
+
+	F.Intrinsic.Math.Add(V.Local.iRow,1,V.Local.iRow)
+F.Intrinsic.Control.Next(V.Local.iCnt)
+
+'F.Intrinsic.UI.Msgbox("Update Complete.","Complete")
+
+F.Intrinsic.Control.CallSub(Subap)
+
+'------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+F.Intrinsic.Control.Label("cmdUpdate_Click_Err")
+F.Intrinsic.Control.If(V.Ambient.ErrorNumber,<>,0)
+	F.Intrinsic.String.Concat("Project: GAB_3524_AP_Terms_Disc_Update.gas",V.Ambient.Newline,V.Ambient.Newline,"Subroutine: ",V.Ambient.CurrentSubroutine,V.Ambient.NewLine,"Error Occurred ",V.Ambient.ErrorNumber," with description ",V.Ambient.ErrorDescription,V.Local.sError)
+	F.Intrinsic.UI.Msgbox(V.Local.sError)
+F.Intrinsic.Control.EndIf
+
+program.sub.cmdUpdate_Click.End
+
+Program.Sub.subAP.Start
+'Populate uAP UDT
+
+F.Intrinsic.Control.SetErrorHandler("subAP_Err")
+F.Intrinsic.Control.ClearErrors
+
+V.Local.sError.Declare(String)
+'------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+V.Local.sRet.Declare(String)
+V.Local.sSQL.Declare(String)
+V.Local.sVendor.Declare(String)
+V.Local.iC.Declare(Long,0)
+
+F.ODBC.Connection!con.OpenLocalRecordsetRO("rstVendors","SELECT VENDOR FROM V_VENDOR_PAY_TO JOIN GAB_3524_AP_TERMS ON GAB_3524_AP_TERMS.TERMS = V_VENDOR_PAY_TO.PAYMENT_TERMS WHERE PAYMENT_TERMS <> '' ORDER BY VENDOR;")
+F.Intrinsic.Control.If(V.ODBC.con!rstVendors.EOF,=,True)
+	F.Intrinsic.UI.Msgbox("The are no Vendors setup with Payment Terms.","Validate")
+F.Intrinsic.Control.Else
+	F.Intrinsic.Control.DoUntil(V.ODBC.con!rstVendors.EOF,=,True)
+		V.Local.sVendor.Set(V.ODBC.con!rstVendors.FieldVal!VENDOR)
+		F.Intrinsic.String.Build("SELECT VENDOR, BATCH_CODE, INVOICE, DATE_INVOICE, AMT_INVOICE, DATE_INVOICE_DUE,DISCOUNT_INVOICE FROM V_AP_OPEN_ITEMS WHERE BATCH_CODE = '10' AND DATE_INVOICE_DUE <= '{0}' AND VENDOR = '{1}' ORDER BY DATE_INVOICE_DUE;",V.Ambient.Date.PervasiveDate,V.Local.sVendor,V.Local.sSQL)
+		F.ODBC.Connection!con.OpenLocalRecordsetRO("rstAP",V.Local.sSQL)
+			F.Intrinsic.Control.If(V.Local.iC,=,0)
+				F.Intrinsic.Variable.LoadUDTFromRecordset("con","rstAP","V.uGlobal.uAP",False,100000)
+				F.Intrinsic.Math.Add(V.Local.iC,1,V.Local.iC)
+			F.Intrinsic.Control.Else
+				F.Intrinsic.Variable.LoadUDTFromRecordset("con","rstAP","V.uGlobal.uAP",True,100000)
+			F.Intrinsic.Control.EndIf
+		F.ODBC.con!rstAP.Close
+	F.ODBC.con!rstVendors.MoveNext
+	F.Intrinsic.Control.Loop
+F.ODBC.con!rstVendors.Close
+F.Intrinsic.Control.EndIf
+
+F.Intrinsic.Control.CallSub(Subudata)
+
+'------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+F.Intrinsic.Control.Label("subAP_Err")
+F.Intrinsic.Control.If(V.Ambient.ErrorNumber,<>,0)
+	F.Intrinsic.String.Concat("Project: GAB_3524_AP_Terms_Disc_Update.gas",V.Ambient.Newline,V.Ambient.Newline,"Subroutine: ",V.Ambient.CurrentSubroutine,V.Ambient.NewLine,"Error Occurred ",V.Ambient.ErrorNumber," with description ",V.Ambient.ErrorDescription,V.Local.sError)
+	F.Intrinsic.UI.Msgbox(V.Local.sError)
+F.Intrinsic.Control.EndIf
+
+
+Program.Sub.subAP.End
+
+Program.Sub.Comments.Start
+${$0$}$$}$$}$12:00:00 AM$}$False
+${$5$}$2.0.0.0$}$2
+${$6$}$rking$}$20220818072353703$}$QNdZLVy4bWuiWa9jh1ZTiKVzNnEzrvL4V2BKXZgtyM95cxkPoHFp0cTm6EM5pF1rKEc6A1K9FGo=
+Program.Sub.Comments.End
